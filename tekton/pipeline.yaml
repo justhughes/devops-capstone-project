@@ -15,6 +15,8 @@ spec:
     - name: repo-url
     - name: branch
       default: main
+    - name: build-image
+      description: The name of the image to build
   tasks:
     - name: init
       workspaces:
@@ -37,6 +39,15 @@ spec:
       runAfter:
         - init
 
+    - name: lint
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+      taskRef:
+        name: flake8
+      runAfter:
+        - clone
+
     - name: tests
       workspaces:
         - name: source
@@ -50,3 +61,17 @@ spec:
         value: "-v --with-spec --spec-color"
       runAfter:
         - clone
+
+    - name: build
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+      taskRef:
+        name: buildah
+        kind: ClusterTask
+      params:
+      - name: IMAGE
+        value: $(params.build-image)
+      runAfter:
+        - tests
+        - lint
